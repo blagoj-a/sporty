@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: sporty
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+app:
+  external-api:
+    url: http://localhost:8080/mock-api
+  kafka:
+    topic: event-score-updates
+

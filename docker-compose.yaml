@@ -1,0 +1,65 @@
+version: '3.8'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - kafka-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    ports:
+      - "29092:29092"
+    networks:
+      - kafka-network
+
+  kafka-topic-creator:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: kafka-topic-creator
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "echo 'Waiting for Kafka to be ready...' &&
+       cub kafka-ready -b kafka:9092 1 20 &&
+       kafka-topics --create --topic event-score-updates --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1 &&
+       echo 'Topic event-score-updates created.'"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+      - kafka-topic-creator
+    networks:
+      - kafka-network
+
+    restart: on-failure
+
+networks:
+  kafka-network:
+    driver: bridge
