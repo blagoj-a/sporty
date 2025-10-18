@@ -25,7 +25,7 @@ Some tests are missing because I ran out of time. The implementation took me mor
 
 ## AI Assistance
 - Used for suggesting solution for publishing events on 10 seconds. That is why the ConcurrentHashMap is ConcurrentHashMap<String, ScheduledFuture>.
-  My original idea was to use ConcurrentHashMap<String> and in EventSchedulerService.java just add:
+  My original idea was to use ConcurrentHashMap <String> and in EventSchedulerService.java just add:
 ```java
 @Scheduled(fixedRate = 10000)
 public void fetchEventScores() {
